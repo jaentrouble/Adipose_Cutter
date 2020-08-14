@@ -1,8 +1,8 @@
-from counter_sources.console import Console
-from counter_sources.viewer import Viewer
-from counter_sources.engine import Engine
+from sources.console import Console
+from sources.viewer import Viewer
+from sources.engine import Engine
 from multiprocessing import Queue, set_start_method, freeze_support
-from counter_sources.common.constants import *
+from sources.common.constants import *
 
 if __name__ == '__main__':
     set_start_method('spawn')

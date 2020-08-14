@@ -90,25 +90,25 @@ class Engine(Process):
             raise TypeError('Inappropriate shape of mask')
         self._mask = mask.astype(np.uint8)
 
-    @property
-    def cell_color(self):
-        return self._cell_color
+    # @property
+    # def cell_color(self):
+    #     return self._cell_color
 
-    @cell_color.setter
-    def cell_color(self, color):
-        if len(color) != 3 :
-            raise TypeError('Wrong color given')
-        self._cell_color = color
+    # @cell_color.setter
+    # def cell_color(self, color):
+    #     if len(color) != 3 :
+    #         raise TypeError('Wrong color given')
+    #     self._cell_color = color
 
-    @property
-    def mem_color(self):
-        return self._mem_color
+    # @property
+    # def mem_color(self):
+    #     return self._mem_color
 
-    @mem_color.setter
-    def mem_color(self, color):
-        if len(color) != 3 :
-            raise TypeError('Wrong color given')
-        self._mem_color = color
+    # @mem_color.setter
+    # def mem_color(self, color):
+    #     if len(color) != 3 :
+    #         raise TypeError('Wrong color given')
+    #     self._mem_color = color
 
     @property
     def mask_mode(self):
