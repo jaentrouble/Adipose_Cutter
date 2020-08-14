@@ -3,8 +3,11 @@ from multiprocessing import Process, Queue
 from PIL import Image
 from .common.constants import *
 from skimage import draw
+from skimage.transform import resize
 from openpyxl import load_workbook
 import os
+import tensorflow as tf
+from tensorflow import keras
 
 # To limit loop rate
 from pygame.time import Clock
@@ -315,6 +318,7 @@ class Engine(Process):
         r1, c1 = max(x0, x1), max(y0, y1)
         self.image = self._backup_image[r0:r1,c0:c1]
         self._clipped_mode = True
+        self._to_ConsoleQ.put({MODE_CLIP:None})
         self._updated = True
 
     def _clip_exit(self):
@@ -327,6 +331,7 @@ class Engine(Process):
         self._layers = []
         self._cell_layers = []
         self.set_empty_mask()
+        self._to_ConsoleQ.put({MODE_CANCEL_CLIP:None})
         self._updated = True
 
     def clip_cancel(self) :
@@ -500,7 +505,7 @@ class Engine(Process):
 
     def fill_delete(self, indices):
         for idx in indices:
-            self._cell_layers.pop(idx)
+            # self._cell_layers.pop(idx)
             self._cell_counts.pop(idx)
         self._updated = True
 
@@ -539,6 +544,7 @@ class Engine(Process):
     def run(self):
         mainloop = True
         self._clock = Clock()
+        self._mask_model = keras.models.load_model('saved_models/mask_model')
         while mainloop:
             self._clock.tick(60)
             if not self._to_EngineQ.empty():

@@ -33,7 +33,7 @@ class Console(Process):
         self.root.rowconfigure(0, weight=1)
         self._list_items = []
         self._list_var = tk.DoubleVar(value=self._list_items)
-        # self.root.resizable(False, False)
+        self.root.resizable(False, False)
         self._img_name_var = tk.StringVar(value='No image loaded')
         self._default_draw_mode_str = 'Click Buttons to draw'
         self._draw_mode_var = tk.StringVar(value=self._default_draw_mode_str)
@@ -201,12 +201,12 @@ class Console(Process):
                                          command=self.list_save.yview)
         self.scroll_save.grid(column=1, row=0, sticky=(tk.E, tk.N, tk.S))
         self.list_save.configure(yscrollcommand=self.scroll_save.set)
-        self.button_save = ttk.Button(self.frame_save, text='Save',
-                                      command=self.button_save_f)
-        self.button_save.grid(column=2, row=1, sticky=(tk.E, tk.S))
         self.button_delete = ttk.Button(self.frame_save,
                                         text='Delete', command=self.button_delete_f)
         self.button_delete.grid(column=2, row=0, sticky=(tk.S))
+        self.button_save = ttk.Button(self.frame_save, text='Save',
+                                      command=self.button_save_f)
+        self.button_save.grid(column=2, row=1, sticky=(tk.E, tk.S))
 
         # Set weights of frames ###############################################
         self.root.columnconfigure(0, weight=1)
@@ -214,6 +214,33 @@ class Console(Process):
         self.root.columnconfigure(2, weight=1)
         self.root.rowconfigure(0, weight=1)
         self.root.rowconfigure(1, weight=1)
+
+        # Widgets that should be DISABLED during normal mode ##############
+        self.normal_disabled=[
+            self.button_cancel_clip,
+            self.scale_ratio,
+            self.button_ratio,
+            self.button_show_mask,
+            self.button_hide_mask,
+            self.button_draw_cancel,
+            self.button_draw_border,
+            self.button_draw_cell,
+            self.button_draw_apply,
+        ]
+
+        # Widgets that should be DISABLED during clip mode ##############
+        self.clip_disabled=[
+            self.button_draw_box,
+            self.button_show_box,
+            self.button_hide_box,
+            self.button_prev,
+            self.button_next,
+            self.button_open,
+            self.button_save,
+            self.button_delete,
+        ]
+        # Switch to normal mode state
+        self.normal_mode_buttons()
 
     def run(self):
         self.initiate()
@@ -248,6 +275,25 @@ class Console(Process):
     #                                                         color=self.cell_color
     #                                                         ))
     #     self.label_cell_color.configure(image=self.image_cell_color)
+
+    def clip_mode_buttons(self):
+        """
+        Switch to clip mode button state
+        """
+        for widget in self.normal_disabled:
+            widget.state(['!disabled'])
+        for widget in self.clip_disabled:
+            widget.state(['disabled'])
+
+    def normal_mode_buttons(self):
+        """
+        Switch to normal mode button state
+        """
+        for widget in self.normal_disabled:
+            widget.state(['disabled'])
+        for widget in self.clip_disabled:
+            widget.state(['!disabled'])
+
 
     @property
     def list_items(self):
@@ -362,6 +408,10 @@ class Console(Process):
                         '\nPress Apply(Enter) when finished\n*Recommend applying every time')
                 elif k == MODE_NONE:
                     self._draw_mode_var.set(self._default_draw_mode_str)
+                elif k == MODE_CLIP:
+                    self.clip_mode_buttons()
+                elif k == MODE_CANCEL_CLIP:
+                    self.normal_mode_buttons()
                 elif k == MODE_FILL_CELL:
                     self._draw_mode_var.set('Click to fill a cell')
                 elif k == MODE_FILL_MP_RATIO:
