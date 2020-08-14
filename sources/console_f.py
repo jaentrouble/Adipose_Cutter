@@ -9,6 +9,8 @@ from tkinter import messagebox
 
 # def button_cell_col_f(q):
 #     q.put({SET_CELL:None})
+def button_draw_box_f(q) :
+    q.put({DRAW_BOX:None})
 
 def button_ratio_f(ratio, q):
     print(ratio.get())

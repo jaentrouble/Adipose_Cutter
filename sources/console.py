@@ -43,6 +43,11 @@ class Console(Process):
         # # Configure Top-left threshold setting menu ###########################
         self.frame_threshold = ttk.Frame(self.mainframe, padding='5 5 5 5')
         self.frame_threshold.grid(column=0, row=0, sticky = (tk.W, tk.N))
+        self.button_draw_box = ttk.Button(self.frame_threshold,
+                                          text='Box',
+                                          command=partial(button_draw_box_f,
+                                          q=self._to_EngineQ))
+        self.button_draw_box.grid(column=0, row=0, sticky=(tk.W))
         # self.button_mem_col = ttk.Button(self.frame_threshold,
         #                                  text='Membrane Color',
         #                                  command=partial(button_mem_col_f,
