@@ -22,7 +22,6 @@ class Engine(Process):
         super().__init__(daemon=True)
         # Initial image and mask
         self.image = np.zeros((300,300,3), dtype=np.uint8)
-        self.set_empty_mask()
         # Queues
         self._to_EngineQ = to_EngineQ
         self._to_ConsoleQ = to_ConsoleQ
@@ -42,6 +41,7 @@ class Engine(Process):
         self._box_start_pos = None
         # Clipped mode
         self._clipped_mode = False
+        self._clipped_masks = []
         # (Color_of_layer(R,G,B), Bool mask(Width, Height, 1))
         self._layers = []
         self._cell_layers = []
@@ -72,6 +72,7 @@ class Engine(Process):
             raise TypeError('Inappropriate shape of image')
         self._image = image.astype(np.uint8)
         self._shape = self._image.shape
+        self.set_empty_mask()
         self._updated = True
 
     @property
@@ -158,7 +159,6 @@ class Engine(Process):
         #TODO: Resize image?
         im = Image.open(path).resize((800,600))
         self.image = np.asarray(im).swapaxes(0,1)
-        self.set_empty_mask()
         self.reset()
         self._updated = True
 
@@ -169,25 +169,34 @@ class Engine(Process):
         self.mask = np.zeros_like(self.image)
         self._updated = True
 
-# TODO : Change this to tf- dependent
-    def set_new_mask(self, ratio:float):
+    def set_new_mask(self):
         """
         ratio : if ratio * dist_to_memcolor > (1-ratio) * dist_to_cellcolor,
         the pixel is considered as cell
         
         ** This will reset all layers
         """
-        ratio /=100
-        dist_to_memcolor=((self.image.astype(np.int) - self.mem_color)**2).sum(
-                                                        axis=2,
-                                                        keepdims=True)
-        dist_to_cellcolor=((self.image.astype(np.int) - self.cell_color)**2).sum(
-                                                        axis=2,
-                                                        keepdims=True)
-        mask_bool = (dist_to_memcolor*ratio) > (dist_to_cellcolor*(1-ratio))
-        self.mask = mask_bool * CELL
+        # Default ratio
+        ratio = 0.3
+        resized_input = resize(self.image, (200,200), preserve_range=True,
+                               anti_aliasing=True)[np.newaxis,:]
+        casted_input = resized_input.astype(np.float32) / 255
+        raw_output = self._mask_model(casted_input).numpy()[0]
+        self.prob_mask = resize(raw_output, self.shape, preserve_range=True,
+                           anti_aliasing=True)
+        self.mask = (self.prob_mask < ratio) * CELL
         self._tmp_mask = self.mask
         self.mode = None
+        self.mask_mode = True
+        self._layers = []
+        self._updated = True
+
+    def change_mask_ratio(self, ratio:float):
+        ratio /= 100
+        self.mask = (self.prob_mask < ratio) * CELL
+        self._tmp_mask = self.mask
+        self.mode = None
+        self.mask_mode = True
         self._layers = []
         self._updated = True
     
@@ -330,18 +339,28 @@ class Engine(Process):
         self._clipped_mode = False
         self._layers = []
         self._cell_layers = []
-        self.set_empty_mask()
         self._to_ConsoleQ.put({MODE_CANCEL_CLIP:None})
+        self.mask_mode = False
         self._updated = True
 
     def clip_cancel(self) :
         """
         Calls _clip_exit and erase the box too.
         """
-        if self._clipped_mode == True:
+        if self._clipped_mode:
             self._clip_exit()
             self._box_layers.pop()
+            self.fill_delete([-1])
             self._updated = True
+
+    def clip_confirm(self):
+        if self._clipped_mode:
+            if len(self._cell_layers) > 0 :
+                self._clipped_masks.append(self._tmp_mask)
+                self._clip_exit()
+            # If press confirm without filling any cells, just cancel
+            else :
+                self.clip_cancel()
 
     def draw_mem_start(self, pos):
         """
@@ -467,6 +486,10 @@ class Engine(Process):
                 elif (below) and (y<self.shape[1]-1) and (mask[x,y+1]==CELL).all():
                     below = False
                 x += 1
+        # Only one cell per clip
+        if len(self._cell_layers) > 0:
+            self._cell_layers.pop()
+            self._cell_counts.pop()
         self._cell_layers.append((COUNT, new_layer))
         self._cell_counts.append(pix_count)
         self._updated = True
@@ -504,10 +527,12 @@ class Engine(Process):
         self._updated = True
 
     def fill_delete(self, indices):
-        for idx in indices:
-            # self._cell_layers.pop(idx)
-            self._cell_counts.pop(idx)
-        self._updated = True
+        if len(self._cell_counts) > 0:
+            for idx in indices:
+                # self._cell_layers.pop(idx)
+                self._cell_counts.pop(idx)
+                self._box_layers.pop(idx)
+            self._updated = True
 
     def fill_save(self, excel_dir, image_name, image_folder):
         try :
@@ -532,13 +557,14 @@ class Engine(Process):
             self._to_ConsoleQ.put({MESSAGE_BOX:'Saved Successfully.'\
                 '\nDon\'t forget to check.'})
         # Saving the mask image
-        mask_save = Image.fromarray(self._tmp_mask.swapaxes(0,1))
-        new_name = image_name + '_mask.png'
-        save_folder = os.path.join(image_folder,'save')
-        if not os.path.exists(save_folder):
-            os.mkdir(save_folder)
-        filename = os.path.join(save_folder, new_name)
-        mask_save.save(filename)
+        for i, mask in enumerate(self._clipped_masks):
+            mask_save = Image.fromarray(mask.swapaxes(0,1))
+            new_name = image_name + str(i) + '_mask.png'
+            save_folder = os.path.join(image_folder,'save')
+            if not os.path.exists(save_folder):
+                os.mkdir(save_folder)
+            filename = os.path.join(save_folder, new_name)
+            mask_save.save(filename)
 
 
     def run(self):
@@ -556,7 +582,7 @@ class Engine(Process):
                     elif k == NEWIMAGE:
                         self.load_image(v)
                     elif k == NEWMASK:
-                        self.set_new_mask(*v)
+                        self.set_new_mask()
                     elif k == MODE_IMAGE:
                         self.mask_mode = False
                     elif k == MODE_MASK:
@@ -575,7 +601,9 @@ class Engine(Process):
                         self.clip_cancel()
                     elif k == SET_RATIO:
                         self.mask_mode = True
-                        self.set_new_mask(v)
+                        self.change_mask_ratio(v)
+                    elif k == MODE_CONFIRM_CLIP:
+                        self.clip_confirm()
                     elif k == MODE_SHOW_BOX:
                         self._show_box = True
                         self._updated = True

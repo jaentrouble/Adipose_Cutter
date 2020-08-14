@@ -79,17 +79,27 @@ class Console(Process):
         # self.label_cell_color['image'] = self.image_cell_color
         # self.label_cell_color.grid(column=1, row=1, sticky=(tk.W))
         # ###########
+        self.button_set_new_mask = ttk.Button(self.frame_threshold,
+                                          text='AI mask',
+                                          command=partial(button_set_new_mask_f,
+                                          q=self._to_EngineQ))
+        self.button_set_new_mask.grid(column=0, row=2, sticky=(tk.W))
         self.ratio = tk.DoubleVar()
         self.scale_ratio = ttk.Scale(self.frame_threshold,
                                      from_=0, to=100, length=100,
                                      variable=self.ratio)
         self.scale_ratio.set(50)
-        self.scale_ratio.grid(column=0, row=2)
+        self.scale_ratio.grid(column=0, row=3)
         self.button_ratio = ttk.Button(self.frame_threshold,
                                        text='Set',
                                        command=partial(button_ratio_f, 
                                        self.ratio, self._to_EngineQ))
-        self.button_ratio.grid(column=1, row=2)
+        self.button_ratio.grid(column=1, row=3)
+        self.button_confirm = ttk.Button(self.frame_threshold,
+                                         text='Confirm',
+                                         command=partial(button_confirm_f,
+                                         q=self._to_EngineQ))
+        self.button_confirm.grid(column=0, row=4)
 
         # Configure Top-Middle show/hide mask menu ############################
         self.frame_mask = ttk.Frame(self.root, padding='5 5 5 5')
@@ -218,6 +228,7 @@ class Console(Process):
         # Widgets that should be DISABLED during normal mode ##############
         self.normal_disabled=[
             self.button_cancel_clip,
+            self.button_set_new_mask,
             self.scale_ratio,
             self.button_ratio,
             self.button_show_mask,

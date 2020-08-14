@@ -90,11 +90,11 @@ class Viewer(Process) :
                 if event.type == pygame.QUIT :
                     mainloop = False
                 elif event.type == pygame.KEYDOWN :
-                    if event.key == pygame.K_ESCAPE :
-                        mainloop = False 
+                    # if event.key == pygame.K_ESCAPE :
+                    #     mainloop = False 
             ######################################
             # Keyboard events
-                    elif event.key == pygame.K_z:
+                    if event.key == pygame.K_z:
                         self._event_queue.put({K_Z:None})
                     elif event.key == pygame.K_RETURN:
                         self._event_queue.put({K_ENTER:None})
