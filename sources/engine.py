@@ -9,8 +9,6 @@ import os
 # To limit loop rate
 from pygame.time import Clock
 
-#TODO: Make 'change_mode' to deal with sudden mode change
-
 class Engine(Process):
     """
     Main process that calculates all the necessary computations
@@ -220,15 +218,22 @@ class Engine(Process):
         area_list = np.multiply(self._cell_counts, self._mp_ratio).tolist()
         self._to_ConsoleQ.put({FILL_LIST:area_list})
 
-    def set_mem_color(self, pos):
-        x,y = pos
-        new_color = self.image[x-2:x+3,y-2:y+3].mean(axis=(0,1)).astype(np.uint8)
-        self.mem_color = new_color
+    # def set_mem_color(self, pos):
+    #     x,y = pos
+    #     new_color = self.image[x-2:x+3,y-2:y+3].mean(axis=(0,1)).astype(np.uint8)
+    #     self.mem_color = new_color
 
-    def set_cell_color(self, pos):
-        x,y = pos
-        new_color = self.image[x-2:x+3,y-2:y+3].mean(axis=(0,1)).astype(np.uint8)
-        self.cell_color = new_color
+    # def set_cell_color(self, pos):
+    #     x,y = pos
+    #     new_color = self.image[x-2:x+3,y-2:y+3].mean(axis=(0,1)).astype(np.uint8)
+    #     self.cell_color = new_color
+
+    def draw_box_start(self, pos):
+        """
+        Make a new layer and draw initial point (Red dot)
+        """
+        
+
 
     def draw_mem_start(self, pos):
         """
@@ -486,17 +491,17 @@ class Engine(Process):
                 for k,v in q.items():
                     if k == MOUSEDOWN:
                         # v : mouse pos which came from Viewer
-                        # Set color
-                        if self.mode == MODE_SET_MEM:
-                            self.set_mem_color(v)
-                            self._color_mode = None
-                            self._to_ConsoleQ.put({SET_MEM:self.mem_color})
-                        elif self.mode == MODE_SET_CELL:
-                            self.set_cell_color(v)
-                            self._color_mode = None
-                            self._to_ConsoleQ.put({SET_CELL:self.cell_color})
+                        # # Set color
+                        # if self.mode == MODE_SET_MEM:
+                        #     self.set_mem_color(v)
+                        #     self._color_mode = None
+                        #     self._to_ConsoleQ.put({SET_MEM:self.mem_color})
+                        # elif self.mode == MODE_SET_CELL:
+                        #     self.set_cell_color(v)
+                        #     self._color_mode = None
+                        #     self._to_ConsoleQ.put({SET_CELL:self.cell_color})
                         # Drawing mode
-                        elif self.mode == MODE_DRAW_MEM:
+                        if self.mode == MODE_DRAW_MEM:
                             if not self._is_drawing:
                                 self.draw_mem_start(v)
                             else:
