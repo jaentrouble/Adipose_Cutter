@@ -90,25 +90,25 @@ class Engine(Process):
             raise TypeError('Inappropriate shape of mask')
         self._mask = mask.astype(np.uint8)
 
-    # @property
-    # def cell_color(self):
-    #     return self._cell_color
+    @property
+    def cell_color(self):
+        return self._cell_color
 
-    # @cell_color.setter
-    # def cell_color(self, color):
-    #     if len(color) != 3 :
-    #         raise TypeError('Wrong color given')
-    #     self._cell_color = color
+    @cell_color.setter
+    def cell_color(self, color):
+        if len(color) != 3 :
+            raise TypeError('Wrong color given')
+        self._cell_color = color
 
-    # @property
-    # def mem_color(self):
-    #     return self._mem_color
+    @property
+    def mem_color(self):
+        return self._mem_color
 
-    # @mem_color.setter
-    # def mem_color(self, color):
-    #     if len(color) != 3 :
-    #         raise TypeError('Wrong color given')
-    #     self._mem_color = color
+    @mem_color.setter
+    def mem_color(self, color):
+        if len(color) != 3 :
+            raise TypeError('Wrong color given')
+        self._mem_color = color
 
     @property
     def mask_mode(self):
@@ -131,14 +131,6 @@ class Engine(Process):
             self.fill_ratio_cancel()
         self._mode = mode
         self._updated = True
-
-    # def mode_change(self):
-    #     if self._mode == MODE_DRAW_MEM:
-    #         self.draw_stop()
-    #     elif self._mode == MODE_FILL_MP_RATIO and self._is_drawing:
-    #         self.fill_ratio_cancel()
-    #     self._mode = None
-    #     self._updated = True
 
     def reset(self):
         self._layers = []
@@ -166,6 +158,7 @@ class Engine(Process):
         self.mask = np.zeros_like(self.image)
         self._updated = True
 
+# TODO : Change this to tf- dependent
     def set_new_mask(self, ratio:float):
         """
         ratio : if ratio * dist_to_memcolor > (1-ratio) * dist_to_cellcolor,
