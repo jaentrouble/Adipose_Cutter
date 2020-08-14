@@ -69,6 +69,7 @@ class Engine(Process):
             raise TypeError('Inappropriate shape of image')
         self._image = image.astype(np.uint8)
         self._shape = self._image.shape
+        self._updated = True
 
     @property
     def shape(self):
@@ -299,7 +300,43 @@ class Engine(Process):
         self.mode = None
         self._etcQ.put({CROSS_CURSOR_OFF:None})
         self._show_box = True
+        self.clip_image((r0,c0),(r1,c1))
         self._updated = True
+
+    def clip_image(self, pos1, pos2):
+        """
+        clip image between two points in rect.
+        order does not matter
+        """
+        self._backup_image = self.image
+        x0, y0 = pos1
+        x1, y1 = pos2
+        r0, c0 = min(x0, x1), min(y0, y1)
+        r1, c1 = max(x0, x1), max(y0, y1)
+        self.image = self._backup_image[r0:r1,c0:c1]
+        self._clipped_mode = True
+        self._updated = True
+
+    def _clip_exit(self):
+        """
+        Reset layers and get back to original image.
+        Careful : This does not save calculated data.
+        """
+        self.image = self._backup_image
+        self._clipped_mode = False
+        self._layers = []
+        self._cell_layers = []
+        self.set_empty_mask()
+        self._updated = True
+
+    def clip_cancel(self) :
+        """
+        Calls _clip_exit and erase the box too.
+        """
+        if self._clipped_mode == True:
+            self._clip_exit()
+            self._box_layers.pop()
+            self._updated = True
 
     def draw_mem_start(self, pos):
         """
@@ -528,6 +565,8 @@ class Engine(Process):
                         self.mode = MODE_DRAW_BOX
                         self._etcQ.put({CROSS_CURSOR_ON:None})
                         self._updated = True
+                    elif k == MODE_CANCEL_CLIP:
+                        self.clip_cancel()
                     elif k == SET_RATIO:
                         self.mask_mode = True
                         self.set_new_mask(v)

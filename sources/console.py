@@ -48,6 +48,12 @@ class Console(Process):
                                           command=partial(button_draw_box_f,
                                           q=self._to_EngineQ))
         self.button_draw_box.grid(column=0, row=0, sticky=(tk.W))
+        self.button_cancel_clip = ttk.Button(self.frame_threshold,
+                                          text='Cancel',
+                                          command=partial(button_cancel_clip_f,
+                                          q=self._to_EngineQ))
+        self.button_cancel_clip.grid(column=0, row=1, sticky=(tk.W))
+
         # self.button_mem_col = ttk.Button(self.frame_threshold,
         #                                  text='Membrane Color',
         #                                  command=partial(button_mem_col_f,

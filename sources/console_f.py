@@ -12,6 +12,9 @@ from tkinter import messagebox
 def button_draw_box_f(q) :
     q.put({DRAW_BOX:None})
 
+def button_cancel_clip_f(q) :
+    q.put({MODE_CANCEL_CLIP:None})
+
 def button_ratio_f(ratio, q):
     print(ratio.get())
     answer = messagebox.askyesno(message='This will reset your mask.\
