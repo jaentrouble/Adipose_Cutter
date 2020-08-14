@@ -46,6 +46,7 @@ class Engine(Process):
         self._always_on_layers = []
         self._is_drawing = False
         self._line_start_pos = None
+        self._show_box = True
         # Modes related to filling
         # Ratio = (micrometer / pixel)**2  -> Because it's area ratio
         self._mp_ratio = DEFAULT_MP_RATIO
@@ -132,6 +133,8 @@ class Engine(Process):
             self.draw_stop()
         elif self._mode == MODE_FILL_MP_RATIO and self._is_drawing:
             self.fill_ratio_cancel()
+        elif self._mode == MODE_DRAW_BOX:
+            self.draw_box_stop()
         self._mode = mode
         self._updated = True
 
@@ -214,10 +217,14 @@ class Engine(Process):
                 self._imageQ.put(tmp_image)
         else :
             tmp_image = self.image
+            if self._show_box:
+                for c, m in self._always_on_layers:
+                    np.multiply(tmp_image, np.logical_not(m), out=tmp_image)
+                    np.add(tmp_image, m * np.array(c,np.uint8), out=tmp_image)
+                for c, m in self._box_layers:
+                    np.multiply(tmp_image, np.logical_not(m), out=tmp_image)
+                    np.add(tmp_image, m * np.array(c,np.uint8), out=tmp_image)
             for c, m in self._always_on_layers:
-                np.multiply(tmp_image, np.logical_not(m), out=tmp_image)
-                np.add(tmp_image, m * np.array(c,np.uint8), out=tmp_image)
-            for c, m in self._box_layers:
                 np.multiply(tmp_image, np.logical_not(m), out=tmp_image)
                 np.add(tmp_image, m * np.array(c,np.uint8), out=tmp_image)
             self._imageQ.put(tmp_image)
@@ -253,31 +260,28 @@ class Engine(Process):
         color = BOX_START
         x, y = pos
         new_layer[x:x+3, y:y+3] = True
-        self._box_layers.append((color, new_layer))
+        self._always_on_layers.append((color, new_layer))
         self._box_start_pos = pos
         self._is_drawing = True
         self._updated = True
 
-
-    def draw_mem_start(self, pos):
+    def draw_box_stop(self):
         """
-        Make a new layer and draw inital point (Red dot)
+        When drawing box is interrupted.
         """
-        new_layer = np.zeros((self.shape[0],self.shape[1],1),
-                             dtype=np.bool)
-        color = LINE_START
-        x, y = pos
-        new_layer[x:x+3, y:y+3] = True
-        self._layers.append((color, new_layer))
-        self._line_start_pos = pos
-        self._is_drawing = True
+        self._box_start_pos = None
+        if self._is_drawing:
+            self._always_on_layers.pop()
+        self._is_drawing = False
+        self._etcQ.put({CROSS_CURSOR_OFF:None})
         self._updated = True
+
 
     def draw_box_end(self, pos):
         """
         Draw Box
         """
-        _, last_layer = self._box_layers.pop()
+        _, last_layer = self._always_on_layers.pop()
         color = BOX_COLOR
         new_layer = np.zeros_like(last_layer)
         del last_layer
@@ -293,8 +297,23 @@ class Engine(Process):
         self._box_start_pos = None
         self._is_drawing = False
         self.mode = None
+        self._etcQ.put({CROSS_CURSOR_OFF:None})
+        self._show_box = True
         self._updated = True
 
+    def draw_mem_start(self, pos):
+        """
+        Make a new layer and draw inital point (Red dot)
+        """
+        new_layer = np.zeros((self.shape[0],self.shape[1],1),
+                             dtype=np.bool)
+        color = LINE_START
+        x, y = pos
+        new_layer[x:x+3, y:y+3] = True
+        self._layers.append((color, new_layer))
+        self._line_start_pos = pos
+        self._is_drawing = True
+        self._updated = True
 
     def draw_mem_end(self, pos):
         """
@@ -507,10 +526,17 @@ class Engine(Process):
                     # Box Drawing
                     elif k == DRAW_BOX:
                         self.mode = MODE_DRAW_BOX
+                        self._etcQ.put({CROSS_CURSOR_ON:None})
                         self._updated = True
                     elif k == SET_RATIO:
                         self.mask_mode = True
                         self.set_new_mask(v)
+                    elif k == MODE_SHOW_BOX:
+                        self._show_box = True
+                        self._updated = True
+                    elif k == MODE_HIDE_BOX:
+                        self._show_box = False
+                        self._updated = True
                     #Drawing modes
                     elif k == DRAW_MEM:
                         self.mode = MODE_DRAW_MEM

@@ -98,6 +98,16 @@ class Console(Process):
                                            command=partial(button_hide_mask_f,
                                            q=self._to_EngineQ))
         self.button_hide_mask.grid(column=0, row=1)
+        self.button_show_box = ttk.Button(self.frame_mask,
+                                          text='Show Box',
+                                          command=partial(button_show_box_f,
+                                          q=self._to_EngineQ))
+        self.button_show_box.grid(column=0, row=2)
+        self.button_hide_box = ttk.Button(self.frame_mask,
+                                          text='Hide Box',
+                                          command=partial(button_hide_box_f,
+                                          q=self._to_EngineQ))
+        self.button_hide_box.grid(column=0, row=3)
 
         # Configure Top-Right Prev/Next menu ##################################
         self.frame_prevnext = ttk.Frame(self.root, padding='5 5 5 5')

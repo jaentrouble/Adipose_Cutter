@@ -26,6 +26,13 @@ def button_show_mask_f(q):
 def button_hide_mask_f(q):
     q.put({MODE_IMAGE:None})
 
+def button_show_box_f(q):
+    q.put({MODE_SHOW_BOX:None})
+
+def button_hide_box_f(q):
+    q.put({MODE_HIDE_BOX:None})
+
+
 #Functions for Top-Right Prev/Next menu ######################################
 #All functions are implemented in Console method
 def button_prev_f():

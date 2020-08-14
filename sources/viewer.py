@@ -43,8 +43,10 @@ class Viewer(Process) :
         self._allgroup = pygame.sprite.LayeredDirty()
         self._cursor = Cursor()
         self._big_cursor = BigCursor()
+        self._cross_cursor = CrossCursor()
         self._cursor.add(self._allgroup)
         self._big_cursor.add(self._allgroup)
+        self._cross_cursor.add(self._allgroup)
         self._mouse_prev = pygame.mouse.get_pos()
         while mainloop :
             self._clock.tick(self._fps)
@@ -75,6 +77,14 @@ class Viewer(Process) :
                         self._big_cursor.visible = False
                         # To erase it from the screen
                         self._big_cursor.dirty = True
+                    elif k == CROSS_CURSOR_ON:
+                        self._cross_cursor.visible = True
+                        self._cursor.visible = False
+                        self._cursor.dirty = True
+                    elif k == CROSS_CURSOR_OFF:
+                        self._cursor.visible = True
+                        self._cross_cursor.visible = False
+                        self._cross_cursor.dirty = True
             ###escape
             for event in pygame.event.get() :
                 if event.type == pygame.QUIT :
@@ -141,6 +151,23 @@ class BigCursor(pygame.sprite.DirtySprite):
         super().__init__()
         self.image = pygame.Surface((11,11))
         self.image.fill(CURSOR)
+        self.rect = self.image.get_rect()
+        self.visible = False
+
+    def update(self):
+        self.rect.center = pygame.mouse.get_pos()
+        self.dirty = 1
+
+class CrossCursor(pygame.sprite.DirtySprite):
+    def __init__(self):
+        super().__init__()
+        cursor_size = 100
+        self.image = pygame.Surface((cursor_size*2,cursor_size*2))
+        self.image.fill((0,0,0))
+        pxarray = pygame.PixelArray(self.image)
+        pxarray[:,cursor_size] = CURSOR
+        pxarray[cursor_size,:] = CURSOR
+        self.image.set_colorkey((0,0,0))
         self.rect = self.image.get_rect()
         self.visible = False
 
