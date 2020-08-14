@@ -42,6 +42,7 @@ class Engine(Process):
         # Clipped mode
         self._clipped_mode = False
         self._clipped_masks = []
+        self._clipped_imgs = []
         # (Color_of_layer(R,G,B), Bool mask(Width, Height, 1))
         self._layers = []
         self._cell_layers = []
@@ -357,6 +358,7 @@ class Engine(Process):
         if self._clipped_mode:
             if len(self._cell_layers) > 0 :
                 self._clipped_masks.append(self._tmp_mask)
+                self._clipped_imgs.append(self.image)
                 self._clip_exit()
             # If press confirm without filling any cells, just cancel
             else :
@@ -557,14 +559,23 @@ class Engine(Process):
             self._to_ConsoleQ.put({MESSAGE_BOX:'Saved Successfully.'\
                 '\nDon\'t forget to check.'})
         # Saving the mask image
-        for i, mask in enumerate(self._clipped_masks):
+        for i, mask, img in zip(range(len(self._clipped_imgs)), 
+                                self._clipped_masks,
+                                self._clipped_imgs):
             mask_save = Image.fromarray(mask.swapaxes(0,1))
-            new_name = image_name + str(i) + '_mask.png'
-            save_folder = os.path.join(image_folder,'save')
-            if not os.path.exists(save_folder):
-                os.mkdir(save_folder)
-            filename = os.path.join(save_folder, new_name)
-            mask_save.save(filename)
+            img_save = Image.fromarray(img.swapaxes(0,1))
+            mask_name = image_name + str(i) + '_mask.png'
+            img_name = image_name + str(i) + '.png'
+            mask_folder = os.path.join(image_folder,'save','mask')
+            img_folder = os.path.join(image_folder,'save','img')
+            if not os.path.exists(mask_folder):
+                os.mkdir(mask_folder)
+            if not os.path.exists(img_folder):
+                os.mkdir(img_folder)
+            filename_mask = os.path.join(mask_folder, mask_name)
+            filename_img = os.path.join(img_folder, img_name)
+            mask_save.save(filename_mask)
+            img_save.save(filename_img)
 
 
     def run(self):
