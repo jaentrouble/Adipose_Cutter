@@ -3,7 +3,7 @@ import numpy as np
 from PIL import Image
 import os
 
-NUMBER = 5
+NUMBER = 24
 
 SIZE = (800,600)
 CELL = (255,255,0)
