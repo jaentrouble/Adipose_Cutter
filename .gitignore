@@ -126,3 +126,5 @@ dmypy.json
 
 # data are too many
 images/save/*
+clipped/*
+marked_data/*

@@ -345,6 +345,7 @@ class Engine(Process):
         self._cell_layers = []
         self._to_ConsoleQ.put({MODE_CANCEL_CLIP:None})
         self.mask_mode = False
+        self.mode = None
         self._updated = True
 
     def clip_cancel(self) :
@@ -485,12 +486,12 @@ class Engine(Process):
                 if (not above) and (y>0) and (mask[x,y-1]==CELL).all():
                     pos_stack.append([x,y-1])
                     above = True
-                elif (above) and (y>0) and (mask[x,y-1]!=CELL).all():
+                elif (above) and (y>0) and (mask[x,y-1]!=CELL).any():
                     above = False
                 elif (not below) and (y<self.shape[1]-1) and (mask[x,y+1]==CELL).all():
                     pos_stack.append([x,y+1])
                     below = True
-                elif (below) and (y<self.shape[1]-1) and (mask[x,y+1]==CELL).all():
+                elif (below) and (y<self.shape[1]-1) and (mask[x,y+1]!=CELL).any():
                     below = False
                 x += 1
         # Only one cell per clip
@@ -564,19 +565,20 @@ class Engine(Process):
             self._to_ConsoleQ.put({MESSAGE_BOX:'Saved Successfully.'\
                 '\nDon\'t forget to check.'})
         # Saving the mask image
+        mask_folder = os.path.join(image_folder,'save',image_name,'mask')
+        img_folder = os.path.join(image_folder,'save',image_name,'img')
+        if not os.path.exists(mask_folder):
+            os.makedirs(mask_folder)
+        if not os.path.exists(img_folder):
+            os.makedirs(img_folder)
+        start_num = len(os.listdir(img_folder))
         for i, mask, img in zip(range(len(self._clipped_imgs)), 
                                 self._clipped_masks,
                                 self._clipped_imgs):
             mask_save = Image.fromarray(mask.swapaxes(0,1))
             img_save = Image.fromarray(img.swapaxes(0,1))
-            mask_name = image_name + str(i) + '_mask.png'
-            img_name = image_name + str(i) + '.png'
-            mask_folder = os.path.join(image_folder,'save','mask')
-            img_folder = os.path.join(image_folder,'save','img')
-            if not os.path.exists(mask_folder):
-                os.mkdir(mask_folder)
-            if not os.path.exists(img_folder):
-                os.mkdir(img_folder)
+            mask_name = image_name + str(i+start_num) + '_mask.png'
+            img_name = image_name + str(i+start_num) + '.png'
             filename_mask = os.path.join(mask_folder, mask_name)
             filename_img = os.path.join(img_folder, img_name)
             mask_save.save(filename_mask)
