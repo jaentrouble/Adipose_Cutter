@@ -231,6 +231,7 @@ class Console(Process):
             self.button_set_new_mask,
             self.scale_ratio,
             self.button_ratio,
+            self.button_confirm,
             self.button_show_mask,
             self.button_hide_mask,
             self.button_draw_cancel,

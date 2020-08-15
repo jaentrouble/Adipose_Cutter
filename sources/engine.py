@@ -150,6 +150,8 @@ class Engine(Process):
         self._cell_counts = []
         self._box_layers = []
         self._always_on_layers = []
+        self._clipped_imgs = []
+        self._clipped_masks = []
         self._is_drawing = False
         self._line_start_pos = None
         self._box_start_pos = None
@@ -351,8 +353,10 @@ class Engine(Process):
         """
         if self._clipped_mode:
             self._clip_exit()
-            self._box_layers.pop()
-            self.fill_delete([-1])
+            if len(self._cell_layers) >0:
+                self.fill_delete([-1])
+            else: 
+                self._box_layers.pop()
             self._updated = True
 
     def clip_confirm(self):
