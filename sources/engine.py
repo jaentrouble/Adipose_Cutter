@@ -488,7 +488,7 @@ class Engine(Process):
                     above = True
                 elif (above) and (y>0) and (mask[x,y-1]!=CELL).any():
                     above = False
-                elif (not below) and (y<self.shape[1]-1) and (mask[x,y+1]==CELL).all():
+                if (not below) and (y<self.shape[1]-1) and (mask[x,y+1]==CELL).all():
                     pos_stack.append([x,y+1])
                     below = True
                 elif (below) and (y<self.shape[1]-1) and (mask[x,y+1]!=CELL).any():
