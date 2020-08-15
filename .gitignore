@@ -128,3 +128,4 @@ dmypy.json
 images/save/*
 clipped/*
 marked_data/*
+images/*
