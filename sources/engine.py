@@ -148,6 +148,7 @@ class Engine(Process):
         self._layers = []
         self._cell_layers = []
         self._cell_counts = []
+        self._box_layers = []
         self._always_on_layers = []
         self._is_drawing = False
         self._line_start_pos = None
@@ -158,7 +159,7 @@ class Engine(Process):
 
     def load_image(self, path:str):
         #TODO: Resize image?
-        im = Image.open(path).resize((800,600))
+        im = Image.open(path).resize((1200,900))
         self.image = np.asarray(im).swapaxes(0,1)
         self.reset()
         self._updated = True
