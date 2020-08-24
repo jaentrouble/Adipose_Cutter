@@ -8,6 +8,7 @@ from openpyxl import load_workbook
 import os
 import tensorflow as tf
 from tensorflow import keras
+from .model_loader import get_model
 
 # To limit loop rate
 from pygame.time import Clock
@@ -182,22 +183,32 @@ class Engine(Process):
         """
         # Default ratio
         ratio = 0.3
-        resized_input = resize(self.image, (200,200), preserve_range=True,
-                               anti_aliasing=True)[np.newaxis,:]
-        casted_input = resized_input.astype(np.float32) / 255
+        casted_input = resize(self.image, (200,200), preserve_range=True,
+                            anti_aliasing=True)[np.newaxis,:].astype(np.float32)
         raw_output = self._mask_model(casted_input).numpy()[0]
         self.prob_mask = resize(raw_output, self.shape, preserve_range=True,
                            anti_aliasing=True)
-        self.mask = (self.prob_mask < ratio) * CELL
+        self.mask = (self.prob_mask > ratio) * CELL
         self._tmp_mask = self.mask
         self.mode = None
         self.mask_mode = True
         self._layers = []
         self._updated = True
+        # ####### DEBUG
+        # import matplotlib.pyplot as plt
+        # print(casted_input.dtype)
+        # print(casted_input[0][0][:10])
+        # print(self.image.dtype)
+        # fig = plt.figure()
+        # ax = fig.add_subplot(1,2,1)
+        # ax.imshow(casted_input[0])
+        # ax = fig.add_subplot(1,2,2)
+        # ax.imshow(raw_output)
+        # plt.show()
 
     def change_mask_ratio(self, ratio:float):
         ratio /= 100
-        self.mask = (self.prob_mask < ratio) * CELL
+        self.mask = (self.prob_mask > ratio) * CELL
         self._tmp_mask = self.mask
         self.mode = None
         self.mask_mode = True
@@ -254,7 +265,7 @@ class Engine(Process):
         self._to_ConsoleQ.put({FILL_MP_RATIO:self._mp_ratio})
 
     def put_ratio_list(self):
-        self._mp_ratio = (self._mp_ratio_micrometer/self._mp_ratio_pixel)
+        self._mp_ratio = (self._mp_ratio_micrometer/self._mp_ratio_pixel)**2
         area_list = np.multiply(self._cell_counts, self._mp_ratio).tolist()
         self._to_ConsoleQ.put({FILL_LIST:area_list})
 
@@ -588,7 +599,7 @@ class Engine(Process):
     def run(self):
         mainloop = True
         self._clock = Clock()
-        self._mask_model = keras.models.load_model('saved_models/mask_model')
+        self._mask_model = get_model('hr_5_3_0')
         while mainloop:
             self._clock.tick(60)
             if not self._to_EngineQ.empty():
